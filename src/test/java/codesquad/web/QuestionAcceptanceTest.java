@@ -24,6 +24,34 @@ public class QuestionAcceptanceTest extends AcceptanceTest {
     private QuestionRepository questionRepository;
 
     @Test
+    public void createFormWithOutLogin() throws Exception {
+        ResponseEntity<String> response = template().getForEntity("/questions/form", String.class);
+        softly.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        log.debug("body : {}", response.getBody());
+    }
+
+    @Test
+    public void createFormWithLogin() throws Exception {
+        ResponseEntity<String> response = basicAuthTemplate().getForEntity("/questions/form", String.class);
+        softly.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        log.debug("body : {}", response.getBody());
+    }
+
+    @Test
+    public void create() throws Exception {
+        HttpEntity<MultiValueMap<String, Object>> request = HtmlFormDataBuilder.urlEncodedForm()
+                .addParameter("title", "questionTestTitle")
+                .addParameter("contents", "testContents")
+                .build();
+
+        ResponseEntity<String> response = basicAuthTemplate().postForEntity("/questions", request, String.class);
+
+        softly.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FOUND);
+        softly.assertThat(questionRepository.findByTitle("questionTestTitle").isPresent()).isTrue();
+        softly.assertThat(response.getHeaders().getLocation().getPath()).isEqualTo("/");
+    }
+
+    @Test
     public void list() throws Exception {
         ResponseEntity<String> response = template().getForEntity("/", String.class);
         softly.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
