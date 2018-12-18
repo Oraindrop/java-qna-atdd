@@ -35,4 +35,9 @@ public class HtmlFormDataBuilder {
     public static HtmlFormDataBuilder put() {
         return urlEncodedForm().addParameter("_method", "put");
     }
+
+    public static HtmlFormDataBuilder delete() {
+        return urlEncodedForm().addParameter("_method", "delete");
+    }
+
 }

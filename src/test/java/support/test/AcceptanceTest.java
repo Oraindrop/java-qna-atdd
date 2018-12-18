@@ -41,6 +41,10 @@ public abstract class AcceptanceTest extends BaseTest {
         return findByUserId(DEFAULT_LOGIN_USER);
     }
 
+    protected User sanjigiUser() {
+        return userRepository.findByUserId("sanjigi").get();
+    }
+
     protected Question defaultQuestion() {
         return findByTitle(DEFAULT_QUESTION_TITLE);
     }

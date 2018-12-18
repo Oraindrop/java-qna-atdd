@@ -1,5 +1,6 @@
 package codesquad.web;
 
+import codesquad.CannotDeleteException;
 import codesquad.UnAuthorizedException;
 import codesquad.domain.Question;
 import codesquad.domain.User;
@@ -9,10 +10,7 @@ import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -49,6 +47,19 @@ public class QuestionController {
             throw new UnAuthorizedException("Invalid user");
         model.addAttribute("question", question);
         return "qna/updateForm";
+    }
+
+    @PutMapping("/{id}")
+    public String update(@LoginUser User loginUser, @PathVariable long id, Question otherQuestion){
+        otherQuestion.writeBy(loginUser);
+        qnaService.update(loginUser, id, otherQuestion);
+        return "redirect:/";
+    }
+
+    @DeleteMapping("/{id}")
+    public String delete(@LoginUser User loginUser, @PathVariable long id) throws CannotDeleteException {
+        qnaService.deleteQuestion(loginUser, id);
+        return "redirect:/";
     }
 
 }
