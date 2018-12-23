@@ -44,11 +44,10 @@ public class QnaService {
     }
 
     @Transactional
-    public void deleteQuestion(User loginUser, long questionId) throws CannotDeleteException {
-        log.debug("####{}", questionRepository.findById(questionId).get());
+    public Question deleteQuestion(User loginUser, long questionId) throws CannotDeleteException {
         Question targetQuestion = questionRepository.findById(questionId).get();
         targetQuestion.delete(loginUser);
-        questionRepository.save(targetQuestion);
+        return questionRepository.save(targetQuestion);
     }
 
     public Iterable<Question> findAll() {

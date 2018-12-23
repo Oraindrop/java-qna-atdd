@@ -1,5 +1,6 @@
 package codesquad.web;
 
+import codesquad.CannotDeleteException;
 import codesquad.domain.Question;
 import codesquad.domain.User;
 import codesquad.security.LoginUser;
@@ -9,13 +10,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.validation.Valid;
+
+import java.net.URI;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -29,9 +30,22 @@ public class ApiQuestionController {
 
     @PostMapping
     public ResponseEntity<Void> create(@LoginUser User loginUser, @Valid @RequestBody Question question){
-        qnaService.create(loginUser, question);
+        Question createQuestion = qnaService.create(loginUser, question);
         logger.debug("question : {}", question);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+        HttpHeaders responseHeader = new HttpHeaders();
+        responseHeader.setLocation(URI.create("/api/questions/" + createQuestion.getId()));
+        return new ResponseEntity<>(responseHeader, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Question> show(@PathVariable long id){
+        return new ResponseEntity<>(qnaService.findById(id).get(), HttpStatus.OK);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Question> update(@LoginUser User loginUser, @PathVariable long id, @Valid @RequestBody Question otherQuestion){
+        otherQuestion.writeBy(loginUser);
+        return new ResponseEntity<>(qnaService.update(loginUser, id, otherQuestion), HttpStatus.OK);
     }
 
 }
