@@ -48,4 +48,8 @@ public class ApiQuestionController {
         return new ResponseEntity<>(qnaService.update(loginUser, id, otherQuestion), HttpStatus.OK);
     }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Question> delete(@LoginUser User loginUser, @PathVariable long id) throws CannotDeleteException {
+        return new ResponseEntity<Question>(qnaService.deleteQuestion(loginUser, id), HttpStatus.OK);
+    }
 }

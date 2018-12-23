@@ -1,9 +1,7 @@
 package codesquad.web;
 
-import codesquad.UnAuthorizedException;
 import codesquad.domain.Question;
 import codesquad.domain.QuestionRepository;
-import codesquad.domain.User;
 import codesquad.domain.UserTest;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -11,19 +9,21 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import support.test.AcceptanceTest;
 
-import static org.junit.Assert.*;
 import static org.slf4j.LoggerFactory.getLogger;
 
 public class ApiQuestionControllerTest extends AcceptanceTest {
     private static final Logger logger = getLogger(ApiQuestionControllerTest.class);
+    private static final Question NEW_QUESTION = new Question("newTitle", "newContents");
+    private static final String CREATE_PATH = "/api/questions";
 
     @Autowired
     private QuestionRepository questionRepository;
 
     @Test
     public void create() {
-        createQuestionWithPost();
-        softly.assertThat(questionRepository.findByTitle("newTitle").isPresent()).isTrue();
+        Question question = new Question("createTest", "createTest");
+        createResource(CREATE_PATH, question);
+        softly.assertThat(questionRepository.findByTitle("createTest").isPresent()).isTrue();
     }
 
     @Test
@@ -43,8 +43,7 @@ public class ApiQuestionControllerTest extends AcceptanceTest {
 
     @Test
     public void update() {
-        ResponseEntity<Void> response = createQuestionWithPost();
-        String location = response.getHeaders().getLocation().getPath();
+        String location = createResource(CREATE_PATH, NEW_QUESTION);
         logger.debug("location : {} ", location);
 
         Question updateQuestion = new Question("newnewTitle", "newnewContents");
@@ -59,22 +58,20 @@ public class ApiQuestionControllerTest extends AcceptanceTest {
 
     @Test
     public void updateWithOtherUser() {
-        ResponseEntity<Void> response = createQuestionWithPost();
-        String location = response.getHeaders().getLocation().getPath();
+        String location = createResource(CREATE_PATH, NEW_QUESTION);
         logger.debug("location : {} ", location);
 
         Question updateQuestion = new Question("newnewTitle", "newnewContents");
 
         ResponseEntity<Question> responseEntity =
-                basicAuthTemplate(UserTest.SING).exchange(location, HttpMethod.PUT, createHttpEntity(updateQuestion), Question.class);
+                basicAuthTemplate(sanjigiUser()).exchange(location, HttpMethod.PUT, createHttpEntity(updateQuestion), Question.class);
 
-        softly.assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        softly.assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
 
     @Test
     public void updateWithoutLogin() {
-        ResponseEntity<Void> response = createQuestionWithPost();
-        String location = response.getHeaders().getLocation().getPath();
+        String location = createResource(CREATE_PATH, NEW_QUESTION);
         logger.debug("location : {} ", location);
 
         Question updateQuestion = new Question("newnewTitle", "newnewContents");
@@ -85,16 +82,42 @@ public class ApiQuestionControllerTest extends AcceptanceTest {
         softly.assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
 
-    private ResponseEntity<Void> createQuestionWithPost() {
-        Question createQuestion = new Question("newTitle", "newContents");
-        ResponseEntity<Void> response = basicAuthTemplate().postForEntity("/api/questions", createQuestion, Void.class);
-        softly.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        return response;
+    @Test
+    public void delete() {
+        Question question = new Question("forDeleteQuestion", "1234");
+        String location = createResource(CREATE_PATH, question);
+        logger.debug("location : {} ", location);
+
+        ResponseEntity<Question> responseEntity =
+                basicAuthTemplate().exchange(location, HttpMethod.DELETE, HttpEntity.EMPTY, Question.class);
+
+        logger.debug("responseEntity body : {}", responseEntity.getBody());
+        softly.assertThat(responseEntity.getBody().isDeleted()).isTrue();
     }
 
-    private HttpEntity createHttpEntity(Object body) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        return new HttpEntity(body, headers);
+    @Test
+    public void deleteWithoutLogin() {
+        String location = createResource(CREATE_PATH, NEW_QUESTION);
+        logger.debug("location : {} ", location);
+
+        ResponseEntity<Question> responseEntity =
+                template().exchange(location, HttpMethod.DELETE, HttpEntity.EMPTY, Question.class);
+
+        logger.debug("responseEntity body : {}", responseEntity.getBody());
+        softly.assertThat(responseEntity.getBody().isDeleted()).isFalse();
+        softly.assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
+
+    @Test
+    public void deleteWithOtherUser() {
+        String location = createResource(CREATE_PATH, NEW_QUESTION);
+        logger.debug("location : {} ", location);
+
+        ResponseEntity<Question> responseEntity =
+                basicAuthTemplate(sanjigiUser()).exchange(location, HttpMethod.DELETE, HttpEntity.EMPTY, Question.class);
+
+        logger.debug("responseEntity body : {}", responseEntity.getBody());
+        softly.assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
 }
