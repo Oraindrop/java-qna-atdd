@@ -30,7 +30,4 @@ public class AnswerTest extends AcceptanceTest {
         NEW_ANSWER.delete(null);
     }
 
-
-
-
 }
