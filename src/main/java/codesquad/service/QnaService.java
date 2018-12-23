@@ -65,8 +65,10 @@ public class QnaService {
         return answerRepository.save(answer);
     }
 
-    public Answer deleteAnswer(User loginUser, long id) {
-        // TODO 답변 삭제 기능 구현 
-        return null;
+    @Transactional
+    public Answer deleteAnswer(User loginUser, long id) throws CannotDeleteException {
+        Answer targetAnswer = answerRepository.findById(id).get();
+        targetAnswer.delete(loginUser);
+        return answerRepository.save(targetAnswer);
     }
 }
