@@ -2,21 +2,24 @@ package codesquad.service;
 
 import codesquad.CannotDeleteException;
 import codesquad.UnAuthorizedException;
-import codesquad.domain.Question;
 import codesquad.domain.QuestionRepository;
-import codesquad.domain.User;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import support.test.AcceptanceTest;
 
 import java.util.Optional;
 
-import static org.junit.Assert.*;
+import static codesquad.domain.QuestionTest.QUESTION_FOR_DELETE;
+import static codesquad.domain.QuestionTest.QUESTION;
+import static codesquad.domain.QuestionTest.QUESTION_FOR_UPDATE;
+import static codesquad.domain.QuestionTest.QUESTION_FOR_UPDATE_OTHER_USER;
+import static codesquad.domain.UserTest.CHOI;
+import static codesquad.domain.UserTest.SANJIGI;
+import static codesquad.domain.UserTest.SING;
 import static org.mockito.Mockito.when;
 
 
@@ -28,45 +31,32 @@ public class QnaServiceTest extends AcceptanceTest {
     @InjectMocks
     QnaService qnaService;
 
-    private User choi = new User(1, "choi", "1234");
-    private User sing = new User(2, "sing", "1234");
-    Question question = new Question("baseTitle", "baseContents");
-    Question questionForUpdate = new Question("updateTitle", "updateContents");
-    Question questionForUpdateOtherUser = new Question("otherTitle", "otherContents");
-    Question questionForDelete = new Question("delTitle", "delContents");
-
-
-
     @Before
     public void setUp() throws Exception {
-        question.writeBy(choi);
-        questionForUpdate.writeBy(choi);
-        questionForUpdateOtherUser.writeBy(sing);
-        questionForDelete.writeBy(choi);
-        when(questionRepository.findById((long)1)).thenReturn(Optional.of(question));
-        when(questionRepository.findById((long)4)).thenReturn(Optional.of(questionForDelete));
+        when(questionRepository.findById((long)1)).thenReturn(Optional.of(QUESTION));
+        when(questionRepository.findById((long)4)).thenReturn(Optional.of(QUESTION_FOR_DELETE));
     }
 
     @Test
     public void update() {
-        qnaService.update(choi, 1, questionForUpdate);
-        softly.assertThat(question.getTitle()).isEqualTo(questionForUpdate.getTitle());
-        softly.assertThat(question.getContents()).isEqualTo(questionForUpdate.getContents());
+        qnaService.update(CHOI, 1, QUESTION_FOR_UPDATE);
+        softly.assertThat(QUESTION.getTitle()).isEqualTo(QUESTION_FOR_UPDATE.getTitle());
+        softly.assertThat(QUESTION.getContents()).isEqualTo(QUESTION_FOR_UPDATE.getContents());
     }
 
     @Test(expected = UnAuthorizedException.class)
     public void updateWithInvalidUser() {
-        qnaService.update(choi, 1, questionForUpdateOtherUser);
+        qnaService.update(SANJIGI, 1, QUESTION_FOR_UPDATE_OTHER_USER);
     }
 
     @Test
     public void deleteQuestion() throws CannotDeleteException {
-        qnaService.deleteQuestion(choi, (long)4);
-        softly.assertThat(questionForDelete.isDeleted()).isTrue();
+        qnaService.deleteQuestion(CHOI, (long)4);
+        softly.assertThat(QUESTION_FOR_DELETE.isDeleted()).isTrue();
     }
 
     @Test(expected = CannotDeleteException.class)
     public void deleteQuestionWithInvalidUser() throws CannotDeleteException {
-        qnaService.deleteQuestion(sing, (long)1);
+        qnaService.deleteQuestion(SING, (long)1);
     }
 }
