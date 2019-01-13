@@ -2,8 +2,7 @@ package codesquad.service;
 
 import codesquad.CannotDeleteException;
 import codesquad.UnAuthorizedException;
-import codesquad.domain.AnswerRepository;
-import codesquad.domain.QuestionRepository;
+import codesquad.domain.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -34,6 +33,9 @@ public class QnaServiceTest extends AcceptanceTest {
     @Mock
     private AnswerRepository answerRepository;
 
+    @Mock
+    private DeleteHistoryService deleteHistoryService;
+
     @InjectMocks
     private QnaService qnaService;
 
@@ -42,7 +44,6 @@ public class QnaServiceTest extends AcceptanceTest {
         when(questionRepository.findById((long)1)).thenReturn(Optional.of(QUESTION));
         when(questionRepository.findById((long)4)).thenReturn(Optional.of(QUESTION_FOR_DELETE));
         when(answerRepository.findById(1L)).thenReturn(Optional.of(NEW_ANSWER));
-        when(answerRepository.findById(3L)).thenReturn(Optional.of(DELETE_ANSWER));
     }
 
     @Test
@@ -80,8 +81,11 @@ public class QnaServiceTest extends AcceptanceTest {
 
     @Test
     public void deleteAnswer() throws CannotDeleteException{
+        Answer answer = new Answer(3L, CHOI, null, "contents");
+        when(answerRepository.findById(3L)).thenReturn(Optional.of(answer));
+        System.out.println(answerRepository.findById(3L).get());
         qnaService.deleteAnswer(CHOI, 3L);
-        softly.assertThat(DELETE_ANSWER.isDeleted()).isTrue();
+        softly.assertThat(answer.isDeleted()).isTrue();
     }
 
     @Test(expected = CannotDeleteException.class)
